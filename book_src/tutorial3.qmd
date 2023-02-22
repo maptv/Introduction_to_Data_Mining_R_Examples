@@ -1,5 +1,7 @@
 ---
 jupyter: python3
+editor_options: 
+  chunk_output_type: inline
 ---
 
 # Module 3: Data Exploration
@@ -88,11 +90,14 @@ from pandas.plotting import scatter_matrix
 ```
 
 ```{python}
-scatter_matrix(iris);
+scatter_matrix(iris)
 ```
 
 ```{python}
-sns.pairplot(iris, hue="species");
+import matplotlib.pyplot as plt
+sns.pairplot(iris, hue="species")
+plt.show()
+plt.clf()
 ```
 
 ```{python}
@@ -122,6 +127,7 @@ pd.Series(pca.explained_variance_).plot(marker="o")
 plt.title("Principal Component Analysis");
 plt.ylabel("Variances");
 plt.xlabel("Principal Components");
+plt.show()
 ```
 
 ```{python}
@@ -225,10 +231,10 @@ for i in range(3):
 **<font color="red">Code:</font>**
 
 ```{python}
+plt.clf()
 from pandas.plotting import parallel_coordinates
-%matplotlib inline
-
 parallel_coordinates(data, 'class')
+plt.show()
 ```
 
 ## 3.3. Summary

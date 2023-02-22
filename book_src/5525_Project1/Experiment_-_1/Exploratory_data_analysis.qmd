@@ -1,0 +1,311 @@
+---
+jupyter: python3
+---
+
+# <center> Exploratory data analysis with Pandas
+
+## 1. Demonstration of main Pandas methods
+
+**[Pandas](http://pandas.pydata.org)** is a Python library that provides extensive means for data analysis. Data scientists often work with data stored in table formats like `.csv`, `.tsv`, or `.xlsx`. Pandas makes it very convenient to load, process, and analyze such tabular data using SQL-like queries. In conjunction with other useful library `Matplotlib` and `Seaborn`, `Pandas` provides a wide range of opportunities for visual analysis of tabular data. This notebook helps you understand the various operations you can perform for exploratory data analysis using Pandas. At any stage, you can always find more documentation about Pandas commands by searching here: https://pandas.pydata.org/docs/reference/index.html#api 
+
+The main data structures in `Pandas` are implemented with **DataFrame** classes. `DataFrames` are great for representing real data: rows correspond to instances (examples, observations, etc.), and columns correspond to features of these instances.
+
+To run each cell we press **Shift+Enter**. Running the first cell should print "Executing the first cell of my class."
+
+```{python}
+print ("Executing the first cell of my class")
+```
+
+Next we import python libraries `numpy` and `pandas`. To do so, we execute the below cell
+
+```{python}
+#| _uuid: e855067a1d281ca6634772513ef918aa1c9224f4
+import numpy as np
+import pandas as pd
+pd.set_option("display.precision", 2)
+pd.set_option('display.max_columns', None)
+```
+
+In this assignment, we'll demonstrate the main methods in action by analyzing a [dataset](https://bigml.com/user/francisco/gallery/dataset/5163ad540c0b5e5b22000383) on the churn rate of telecom operator clients. Let's read the data (using `read_csv`), and take a look at the first 5 lines using the `head` method:
+
+```{python}
+#| _uuid: f274f88e14b4df01f8f60bd8be5e0cea903a7dd7
+df = pd.read_csv('telecom_churn.csv')
+df.head()
+```
+
+Recall that each row corresponds to one client, an **instance**, and columns are **features** of this instance.
+
+Let’s have a look at data dimensionality, feature names, and feature types.
+
+```{python}
+#| _uuid: 85347476c8a704b43ddc6b5ec54ac0059b2b740a
+print(df.shape)
+```
+
+From the output, we can see that the table contains 3333 rows and 21 columns.
+
+Now let's try printing out column names using `columns`:
+
+```{python}
+#| _uuid: 216df4e9a25d0baa8b506e1ec72df488d78367eb
+print(list(df.columns)) 
+```
+
+We can use the `info()` method to output some general information about the dataframe. Note that the 'object' data type refers to categorical variables in this data set. '3333 non-null' means that all 3333 values of the corresponding variable are not missing.  
+
+```{python}
+#| _uuid: 2bcfb060dcbda4fe1720eaf3c2e5c003a891dd77
+print(df.info())   
+```
+
+`bool`, `int64`, `float64` and `object` are the data types of our features. We see that one feature is logical (`bool`), 3 features are of type `object`, and 16 features are numeric. With this same method, we can easily see if there are any missing values. Here, there are none because each column contains 3333 observations, the same number of rows we saw before with `shape`.
+
+The `describe` method shows basic statistical characteristics of each numerical feature (`int64` and `float64` types): number of non-missing values, mean, standard deviation, range, median, 0.25 and 0.75 quartiles.
+
+```{python}
+#| _uuid: 24e1d394f938980403a736421b4cf855ddb8ef8c
+df.describe()
+```
+
+In order to see statistics on non-numerical features, one has to explicitly indicate data types of interest in the `include` parameter.
+
+```{python}
+#| _uuid: c1bd67bc0b915dbac429152c649a7c118770d824
+df.describe(include=['object', 'bool'])
+```
+
+For categorical (type `object`) and boolean (type `bool`) features we can use the `value_counts` method. Let's have a look at the distribution of `churn`:
+
+```{python}
+#| _uuid: eef4f419ac223f320d1841635ffbb816c807fe54
+df['churn'].value_counts()
+```
+
+2850 users out of 3333 are *loyal*; their `Churn` value is `0`. To calculate fractions, pass `normalize=True` to the `value_counts` function.
+
+```{python}
+#| _uuid: b516f5e583ac75e0379048738386ece5b208f0e7
+df['churn'].value_counts(normalize=True)
+```
+
+
+### Sorting
+
+A DataFrame can be sorted by the value of one of the variables (i.e columns). For example, we can sort by *Total day charge* (use `ascending=False` to sort in descending order):
+
+```{python}
+#| _uuid: 419200266ac1e7d0e96ba1a20d756c9d87eb2541
+df.sort_values(by='total day charge', ascending=False).head(10)
+```
+
+Sorting Total day charge in ascending order
+
+```{python}
+df.sort_values(by='total day charge').head(10)
+```
+
+### Indexing and retrieving data
+
+A DataFrame can be indexed in a few different ways. 
+
+To get a single column/feature, you can use a `DataFrame['Name']` construction. Let's use this to answer a question about that column alone: **what is the proportion of churned users in our dataframe?**
+
+```{python}
+#| _uuid: b020796a83bc9e10b1bc8e9c6439fc006302d999
+df['churn'].mean()
+```
+
+
+**Boolean indexing** with one column is also very convenient. The syntax is `df[df['Name'] == P]`, where `P` is some logical condition that is checked for each element of the `Name` column. The result of such indexing is the DataFrame consisting only of rows that satisfy the `P` condition on the `Name` column. 
+
+Lets use it to see all customers who have churned out of the company **('churn' == 1)**
+
+```{python}
+df[df['churn'] == True]
+```
+
+Let's answer the question:
+
+**What are average values of numerical features for churned users?**
+
+```{python}
+#| _uuid: 3712d185e50d44c65128468c603b120b75786c84
+df[df['churn'] == True].mean()
+```
+
+**What are average values of numerical features for non-churned users?**
+
+```{python}
+df[df['churn'] == False].mean()
+```
+
+**How much time (on average) do churned users spend on the phone during daytime?**
+
+```{python}
+#| _uuid: 314dfa8e0aeaa0a1d333e32234bd9b3e0a001348
+df[df['churn'] == True]['total day minutes'].mean()
+```
+
+
+**What is the maximum length of international calls among loyal users (`churn == 0`) who do not have an international plan?**
+
+
+```{python}
+#| _uuid: 41874ec9bde4b2474a0bb9faf93795b2ae6cdf24
+df[(df['churn'] == False) & (df['international plan'] == 'no')]['total intl minutes'].max()
+```
+
+
+### Grouping
+
+In general, grouping data in Pandas works as follows:
+
+
+```python
+df.groupby(by=grouping_columns)[columns_to_show].function()
+```
+
+
+1. First, the `groupby` method divides the `grouping_columns` by their values. They become a new index in the resulting dataframe.
+2. Then, columns of interest are selected (`columns_to_show`). If `columns_to_show` is not included, all non groupby clauses will be included.
+3. Finally, one or several functions are applied to the obtained groups per selected columns.
+
+Here is an example where we group the data according to the values of the `Churn` variable and display statistics of three columns in each group:
+
+```{python}
+#| _uuid: 180e6b3d26c8adc52e46d8ab82dad34f9a49e234
+columns_to_show = ['total day minutes', 'total eve minutes', 'total night minutes']
+
+df.groupby(by=['churn'])[columns_to_show].describe(percentiles=[])
+```
+
+
+### Summary tables
+
+Suppose we want to see how the observations in our sample are distributed in the context of two variables - `churn` and `international plan`. To do so, we can build a **contingency table** using the `crosstab` method:
+
+
+```{python}
+#| _uuid: ebcff1fdb2e6805fa186a0f5c27b46655222e9c2
+pd.crosstab(df['churn'], df['international plan'])
+```
+
+```{python}
+#| _uuid: b2228aa42dd23fb1c70525f4ab105c5e2ee6196d
+#| scrolled: true
+pd.crosstab(df['churn'], df['voice mail plan'])
+```
+
+To compute probabilities of churn being True or False given voice mail plan, we can also normalize along the columns by specifying the "normalize" parameter of the `crosstab` method as follows:
+
+```{python}
+#| _uuid: b2228aa42dd23fb1c70525f4ab105c5e2ee6196d
+#| scrolled: true
+pd.crosstab(df['churn'], df['voice mail plan'],normalize='columns')
+```
+
+
+### DataFrame transformations
+
+Like many other things in Pandas, adding columns to a DataFrame can be performed in many ways.
+
+For example, if we want to calculate the total charge of calls for all users, let's create the `total charge` Series and paste it into the DataFrame:
+
+
+Notice the last column "total charge," which we have added in our data frame 
+
+```{python}
+#| _uuid: c5ec80ecb3b2e917834ccfb6cb0a76aced20315f
+df['total charge'] = df['total day charge'] + df['total eve charge'] + \
+                     df['total night charge'] + df['total intl charge']
+df.head()
+```
+
+To delete columns or rows, use the `drop` method, passing the required indexes and the `axis` parameter (`1` if you delete columns, and nothing or `0` if you delete rows). The `inplace` argument tells whether to change the original DataFrame. With `inplace=False`, the `drop` method doesn't change the existing DataFrame and returns a new one with dropped rows or columns. With `inplace=True`, it alters the DataFrame.
+
+```{python}
+#| _uuid: 48fbc2e42a623ee78f9e2d9222186387561bbb0a
+# get rid of just created column and phone number                
+df.drop(['total charge', 'phone number'], axis=1, inplace=True) 
+# and here’s how you can delete rows
+#df.drop([1, 2]).head() 
+```
+
+## 2. First attempt at predicting telecom churn
+
+
+Let's see how churn rate is related to the *International plan* feature. We'll do this using a `crosstab` contingency table and also through visual analysis with `Seaborn`
+
+```{python}
+#| _uuid: 8bc65b91a9041032168dfd50d5fab097c003d9c0
+#| scrolled: true
+pd.crosstab(df['churn'], df['international plan'], margins=True)
+```
+
+```{python}
+#| _uuid: c809a62f4d1077993a0f0f2d36d1066c108ca23d
+# some imports to set up plotting 
+import matplotlib.pyplot as plt
+# pip install seaborn 
+import seaborn as sns
+# Graphics in retina format are sharper and more legible
+%config InlineBackend.figure_format = 'retina'
+```
+
+```{python}
+#| _uuid: ae3bb6cdde2a6d72112e6076d92b35f2f2caaa3e
+sns.countplot(x='international plan', hue='churn', data=df);
+```
+
+
+We see that, with *International Plan*, the churn rate is much higher, which is an interesting observation! Perhaps large and poorly controlled expenses with international calls are very conflict-prone and lead to dissatisfaction among the telecom operator's customers.
+
+Next, let's look at another important feature – *Customer service calls*. Let's also make a summary table and a picture.
+
+```{python}
+#| _uuid: 75cf7fe86ae75e01d49a07fb52fe5c8ce1c6a334
+pd.crosstab(df['churn'], df['customer service calls'], margins=True)
+```
+
+```{python}
+#| _uuid: bc0a6cb1fb72cc66bc1d7c33301b3ab0d2c7d81b
+sns.countplot(x='customer service calls', hue='churn', data=df);
+```
+
+Although it's not so obvious from the summary table, it's easy to see from the above plot that the churn rate increases sharply from 4 customer service calls and above.
+
+Now let's add a binary feature to our DataFrame – `Customer service calls > 3`. And once again, let's see how it relates to churn. 
+
+```{python}
+#| _uuid: 37b91ac20b481d221d97515aa46c9cda713a6991
+df['many_service_calls'] = (df['customer service calls'] > 3).astype('int')
+
+pd.crosstab(df['many_service_calls'], df['churn'], margins=True)
+```
+
+```{python}
+#| _uuid: 58463ad14986d044a406debf885fd25f43fee525
+sns.countplot(x='many_service_calls', hue='churn', data=df);
+```
+
+
+Let's construct another contingency table that relates *Churn* with both *International plan* and freshly created *Many_service_calls*.
+
+
+```{python}
+#| _uuid: 4679d8985f7b32943cd990a1dc4e88f41edca039
+#| scrolled: false
+pd.crosstab(df['many_service_calls'] & (df['international plan'] == 'yes') , df['churn'], margins=True)
+```
+
+Therefore, predicting that a customer is not loyal (*Churn*=1) in the case when the number of calls to the service center is greater than 3 and the *International Plan* is added (and predicting *Churn*=0 otherwise), we might expect an accuracy of 85.8% (we are mistaken only 464 + 9 times). This number, 85.8%, that we got through this very simple reasoning serves as a good starting point (*baseline*) for the further machine learning models that we will build. 
+
+Recall that, before the advent of machine learning, the data analysis process looked something like this. Let's recap what we've covered:
+    
+- The share of loyal clients in the sample is 85.5%. The most naive model that always predicts a "loyal customer" on such data will guess right in about 85.5% of all cases. That is, the proportion of correct answers (*accuracy*) of subsequent models should be no less than this number, and will hopefully be significantly higher;
+- With the help of a simple forecast that can be expressed by the following formula: "International plan = True & Customer Service calls > 3 => Churn = 1, else Churn = 0", we can expect a guessing rate of 85.8%, which is just above 85.5%. 
+- We got these two baselines without applying machine learning, and they'll serve as the starting point for our subsequent models. 
+
+This notebook is adaption from the following kaggle notebook https://www.kaggle.com/kashnitsky/topic-1-exploratory-data-analysis-with-pandas. 
+

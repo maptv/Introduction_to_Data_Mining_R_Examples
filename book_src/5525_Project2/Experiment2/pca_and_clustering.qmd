@@ -1,0 +1,96 @@
+---
+jupyter: python3
+---
+
+# <center> PCA and clustering
+
+  
+In this lesson, we will work with unsupervised learning methods such as Principal Component Analysis (PCA) and k-means clustering.
+
+# <center>Samsung Human Activity Recognition
+
+In this task, we will work with the [Samsung Human Activity Recognition] (https://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones) dataset. The data comes from the accelerometers and gyros of Samsung Galaxy S3 mobile phones ( you can find more info about the features using on the link above), the type of activity of a person with a phone in his pocket is also known - whether he walked, stood, lay, sat or walked up or down the stairs.
+
+We imagine that the type of activity is unknown to us, and we will try to cluster people purely on the basis of available features. 
+
+```{python}
+import os
+
+X_train = np.loadtxt(os.path.join("samsung/", "samsung_train.txt"))
+y_train = np.loadtxt(os.path.join("samsung/",
+                                  "samsung_train_labels.txt")).astype(int)
+
+X_test = np.loadtxt(os.path.join("samsung/", "samsung_test.txt"))
+y_test = np.loadtxt(os.path.join("samsung/",
+                                  "samsung_test_labels.txt")).astype(int)
+```
+
+```{python}
+X = np.vstack([X_train, X_test])
+y = np.hstack([y_train, y_test])
+n_classes = np.unique(y).size
+print (f"Number of classes are {n_classes}")
+```
+
+[These labels correspond to:](https://archive.ics.uci.edu/ml/machine-learning-databases/00240/UCI%20HAR%20Dataset.names)
+- 1 - walking
+- 2 - going up the stairs
+- 3 - going down the stairs
+- 4 - sitting
+- 5 - standing
+- 6 - lying down
+
+[](http://)Scale the sample using `StandardScaler` with default parameters.
+
+```{python}
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+X_scaled.shape
+```
+
+There are 10299 instances with 561 features. We next reduce the number of dimensions using PCA, leaving only as many components as necessary to explain at least 90% of the variance of the original (scaled) data. 
+
+```{python}
+from sklearn.decomposition import PCA
+
+pca = PCA(n_components=0.9, random_state=10).fit(X_scaled)
+X_pca = pca.transform(X_scaled)
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, s=20, cmap='Set1');
+plt.colorbar()
+X_pca.shape
+```
+
+The above plot shows the visualization of the 6 classes using just the first two principal component features. After applying PCA, we are left with only 65 features that can explain at least 90% of variance in the original data. We will run Kmeans on this data with k = 6 (the number of clusters we expect to see in the data).
+
+```{python}
+from sklearn.cluster import KMeans
+kmeans = KMeans(n_clusters=6, n_init=100, 
+                random_state=10, n_jobs=1)
+kmeans.fit(X_pca)
+cluster_labels = kmeans.labels_
+```
+
+Visualize the data in the projection on the first two main components. Color the dots according to the clusters received.
+
+
+```{python}
+plt.scatter(X_pca[:, 0], X_pca[:, 1], c=cluster_labels, s=20,cmap='Set1');
+plt.colorbar()
+```
+
+Look at the correspondence between the cluster labels and the original class labels and what kinds of class labels the KMeans algorithm has high confusion.
+
+
+```{python}
+import pandas as pd
+
+tab = pd.crosstab(y, cluster_labels, margins=True)
+tab.index = ['walking', 'going up the stairs',
+            'going down the stairs', 'sitting', 'standing', 'lying', 'all']
+tab.columns = ['cluster' + str(i + 1) for i in range(10)] + ['all']
+tab
+```
+
+This notebook is adaption from the following kaggle notebook https://www.kaggle.com/kashnitsky/topic-7-unsupervised-learning-pca-and-clustering and https://www.kaggle.com/kashnitsky/a7-demo-unsupervised-learning-solution
+
+

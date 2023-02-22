@@ -1,0 +1,221 @@
+---
+jupyter: python3
+---
+
+# <center> Cluster Analysis
+
+## K-means Clustering
+
+The k-means clustering algorithm represents each cluster by its corresponding cluster centroid. The algorithm would partition the input data into *k* disjoint clusters by iteratively applying the following two steps:
+1. Form *k* clusters by assigning each instance to its nearest centroid.
+2. Recompute the centroid of each cluster.
+
+In this section, we will perform k-means clustering on a toy example of movie ratings dataset. We first create the dataset as follows.
+
+```{python}
+import pandas as pd
+
+ratings = [['john',5,5,2,1],['mary',4,5,3,2],['bob',4,4,4,3],['lisa',2,2,4,5],['lee',1,2,3,4],['harry',2,1,5,5]]
+titles = ['user','Jaws','Star Wars','Exorcist','Omen']
+movies = pd.DataFrame(ratings,columns=titles)
+movies
+```
+
+In this example dataset, the first 3 users liked action movies (Jaws and Star Wars) while the last 3 users enjoyed horror movies (Exorcist and Omen). Our goal is to apply k-means clustering on the users to identify groups of users with similar movie preferences.
+
+The example below shows how to apply k-means clustering (with k=2) on the movie ratings data. We must remove the "user" column first before applying the clustering algorithm. The cluster assignment for each user is displayed as a dataframe object.
+
+```{python}
+from sklearn import cluster
+
+data = movies.drop('user',axis=1)
+k_means = cluster.KMeans(n_clusters=2, max_iter=100, random_state=1)
+k_means.fit(data) 
+labels = k_means.labels_
+pd.DataFrame(labels, index=movies.user, columns=['Cluster ID'])
+```
+
+The k-means clustering algorithm assigns the first three users to one cluster and the last three users to the second cluster. The results are consistent with our expectation. We can also display the centroid for each of the two clusters.
+
+```{python}
+centroids = k_means.cluster_centers_
+pd.DataFrame(centroids,columns=data.columns)
+```
+
+Observe that cluster 0 has higher ratings for the horror movies whereas cluster 1 has higher ratings for action movies. The cluster centroids can be applied to other users to determine their cluster assignments. 
+
+```{python}
+import numpy as np
+
+testData = np.array([[4,5,1,2],[3,2,4,4],[2,3,4,1],[3,2,3,3],[5,4,1,4]])
+labels = k_means.predict(testData)
+labels = labels.reshape(-1,1)
+usernames = np.array(['paul','kim','liz','tom','bill']).reshape(-1,1)
+cols = movies.columns.tolist()
+cols.append('Cluster ID')
+newusers = pd.DataFrame(np.concatenate((usernames, testData, labels), axis=1),columns=cols)
+newusers
+```
+
+To determine the number of clusters in a dataset, we can apply k-means with varying number of clusters from 1 to 6 and compute their corresponding sum-of-squared errors (SSE) as shown in the example below. The "elbow" in the plot of SSE versus number of clusters can be used to estimate the number of clusters.
+
+```{python}
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+numClusters = [1,2,3,4,5,6]
+SSE = []
+for k in numClusters:
+    k_means = cluster.KMeans(n_clusters=k)
+    k_means.fit(data)
+    SSE.append(k_means.inertia_)
+
+plt.plot(numClusters, SSE)
+plt.xlabel('Number of Clusters')
+plt.ylabel('SSE')
+```
+
+## Hierarchical Clustering [Vertebrate dataset]
+
+This section demonstrates how to apply hierarchical clustering on the vertebrate dataset. Specifically, we illustrate the results of using 3 hierarchical clustering algorithms provided by the Python scipy library: (1) single link (MIN), (2) complete link (MAX), and (3) group average. Other hierarchical clustering algorithms provided by the library include centroid-based and Ward's method.
+
+```{python}
+import pandas as pd
+
+data = pd.read_csv('Dataset/vertebrate.csv',header='infer')
+data
+```
+
+### Single Link (MIN)
+
+```{python}
+from scipy.cluster import hierarchy
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+names = data['Name']
+Y = data['Class']
+X = data.drop(['Name','Class'],axis=1)
+Z = hierarchy.linkage(X.to_numpy(), 'single')
+dn = hierarchy.dendrogram(Z,labels=names.tolist(),orientation='right')
+```
+
+### Complete Link (MAX)
+
+```{python}
+Z = hierarchy.linkage(X.to_numpy(), 'complete')
+dn = hierarchy.dendrogram(Z,labels=names.tolist(),orientation='right')
+```
+
+### Group Average
+
+```{python}
+Z = hierarchy.linkage(X.to_numpy(), 'average')
+dn = hierarchy.dendrogram(Z,labels=names.tolist(),orientation='right')
+```
+
+To evaluate the above clustering algorithms, we can look at the known grouping of animals based on the 'Class' column.
+
+```{python}
+data[['Name','Class']].sort_values(by='Class')
+```
+
+If animals from the same class are merged earlier in the denrodgram than animals from different classes, then we would say that the clustering expressed by the dendrogram conforms with the class labels. This can be quantitatively measured using the **cophenetic correlation coefficient**, which computes the correlation between the pair-wise distance matrix of points obtained from the dendrogram (the dendrogram distance at which a pair of points are merged into a common cluster), and a pre-specified pair-wise distance matrix (e.g., computed from class labels). A high cophenetic correlation indicates better match between the hierarchical clustering and the class labels. Below, we compute the cophenetic correlation coefficient for the Group average algorithm, and plot the pair-wise distance matrices obtained from the dendrogram and the class labels.
+
+```{python}
+from scipy.spatial.distance import pdist, squareform
+
+Yarr = pd.factorize(Y)[0].reshape(-1,1) # converting Y to a numeric ndarray
+Ydist = pdist(Yarr,metric='hamming'); # computing pair-wise distances among animals using hamming distance over their class labels
+
+fig, ax = plt.subplots(1,2, sharey=True, sharex=True, figsize=(16,6));
+ax[0].imshow(squareform(Ydist));
+ax[0].title.set_text('Using class distance');
+
+Z = hierarchy.linkage(X.to_numpy(), 'average')
+c, Zdist = hierarchy.cophenet(Z,Ydist); # Computing cophenetic correlation coefficient
+
+ax[1].imshow(squareform(Zdist)); # plotting the distance among points based on the dendrogram
+ax[1].title.set_text('Using dendrogram distance');
+ax[0].set_yticks(np.arange(len(names)));
+ax[0].set_yticklabels(names);
+ax[0].set_xticks(np.arange(len(names)));
+ax[0].set_xticklabels(names);
+plt.setp(ax[0].get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor");
+plt.setp(ax[1].get_xticklabels(), rotation=45, ha="right",
+         rotation_mode="anchor");
+print (f"Cophenetic correlation coefficient is {c}")
+```
+
+## Density-Based Clustering
+
+Density-based clustering identifies the individual clusters as high-density regions that are separated by regions of low density. DBScan is one of the most popular density based clustering algorithms. In DBScan, data points are classified into 3 types---core points, border points, and noise points---based on the density of their local neighborhood. The local neighborhood density is defined according to 2 parameters:  radius of neighborhood size (eps) and minimum number of points in the neighborhood (min_samples). 
+
+For this approach, we will use a noisy, 2-dimensional dataset originally created by Karypis et al. [1] for evaluating their proposed CHAMELEON algorithm. The example code shown below will load and plot the distribution of the data.
+
+```{python}
+import pandas as pd
+
+data = pd.read_csv('Dataset/chameleon.data', delimiter=' ', names=['x','y'])
+data.plot.scatter(x='x',y='y')
+```
+
+We apply the DBScan clustering algorithm on the data by setting the neighborhood radius (eps) to 15.5 and minimum number of points (min_samples) to be 5. The clusters are assigned to IDs between 0 to 8 while the noise points are assigned to a cluster ID equals to -1.
+
+```{python}
+from sklearn.cluster import DBSCAN
+
+db = DBSCAN(eps=15.5, min_samples=5).fit(data)
+core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+core_samples_mask[db.core_sample_indices_] = True
+labels = pd.DataFrame(db.labels_,columns=['Cluster ID'])
+result = pd.concat((data,labels), axis=1)
+result.plot.scatter(x='x',y='y',c='Cluster ID', colormap='jet')
+print (f"Number of clusters produced: {labels.max()[0]}")
+```
+
+## Challenges of K-means with non-globular clusters
+
+One of the main limitations of the k-means clustering algorithm is its tendency to seek for globular-shaped clusters. Thus, it does not work when applied to datasets with arbitrary-shaped clusters or when the cluster centroids overlapped with one another. To illustrate this, consider the following two-dimensional datasets.
+
+```{python}
+import pandas as pd
+
+data1 = pd.read_csv('Dataset/2d_data.txt', delimiter=' ', names=['x','y'])
+data2 = pd.read_csv('Dataset/elliptical.txt', delimiter=' ', names=['x','y'])
+
+fig, (ax1,ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,5))
+data1.plot.scatter(x='x',y='y',ax=ax1)
+data2.plot.scatter(x='x',y='y',ax=ax2)
+```
+
+Below, we demonstrate the results of applying k-means to the datasets (with k=2).
+
+```{python}
+from sklearn import cluster
+
+k_means = cluster.KMeans(n_clusters=2, max_iter=50, random_state=1)
+k_means.fit(data1)
+labels1 = pd.DataFrame(k_means.labels_,columns=['Cluster ID'])
+result1 = pd.concat((data1,labels1), axis=1)
+
+k_means2 = cluster.KMeans(n_clusters=2, max_iter=50, random_state=1)
+k_means2.fit(data2)
+labels2 = pd.DataFrame(k_means2.labels_,columns=['Cluster ID'])
+result2 = pd.concat((data2,labels2), axis=1)
+
+fig, (ax1,ax2) = plt.subplots(nrows=1, ncols=2, figsize=(12,5))
+result1.plot.scatter(x='x',y='y',c='Cluster ID',colormap='jet',ax=ax1)
+ax1.set_title('K-means Clustering')
+result2.plot.scatter(x='x',y='y',c='Cluster ID',colormap='jet',ax=ax2)
+ax2.set_title('K-means Clustering')
+```
+
+The plots above show the poor performance of k-means clustering.
+
+
+References:
+[1] George Karypis, Eui-Hong Han, and Vipin Kumar. CHAMELEON: A Hierarchical Clustering Algorithm Using Dynamic Modeling. IEEE Computer 32(8): 68-75, 1999.
+
+
