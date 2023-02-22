@@ -1,0 +1,259 @@
+---
+editor_options:
+  markdown:
+    wrap: 72
+jupyter:
+  jupytext:
+    cell_metadata_filter: 'tags,name,-all'
+    main_language: R
+    notebook_metadata_filter: '-all'
+  kernelspec:
+    display_name: R
+    language: R
+    name: ir
+---
+
+# Introduction
+
+```{r}
+x = 4              # integer
+print(x)
+class(x)
+
+y = TRUE           # boolean (True, False)
+print(y)
+print(class(y))
+
+z = 3.7            # floating point
+print(c(z, class(z)))
+
+s = "This is a string"    # string
+print(c(s, class(s)))
+```
+
+```{r}
+str(x)
+```
+
+```{r}
+class(x)
+```
+
+```{r}
+x = 4            # integer
+x1 = x + 4       # addition 
+x2 = x * 3       # multiplication
+# x += 2           # equivalent to x = x + 2
+x3 = x       
+# x *= 3           # equivalent to x = x * 3
+x4 = x      
+# x5 = x % 4       # modulo (remainder) operator
+```
+
+```{r}
+base::
+```
+
+```{r}
+#| tags: []
+exp(4)
+```
+
+```{r}
+z = 3.7          # floating point number
+z1 = z - 2       # subtraction
+z2 = z / 3       # division
+z3 = z // 3      # integer division
+z4 = z ** 2      # square of z 
+z5 = z4 ** 0.5   # square root
+z6 = pow(z,2)    # equivalent to square of z
+z7 = round(z)    # rounding z to its nearest integer 
+z8 = int(z)      # type casting float to int
+
+print(x,x1,x2,x3,x4,x5)
+print(z,z1,z2,z3,z4)
+print(z5,z6,z7,z8)
+```
+
+**Packages used for this chapter:** `r format_pkgs(pkgs)`
+
+## Used Software
+
+This companion book assumes that you have
+[R](https://cran.r-project.org/) and [RStudio
+Desktop](https://www.rstudio.com/products/rstudio/) installed and that
+you are familiar with the basics of R, how to run R code and install
+packages.
+
+If you are new to R, then working through the official R manual [An
+Introduction to
+R](https://cran.r-project.org/doc/manuals/r-release/R-intro.html)
+[@RCore2021] will get you started. There are many introduction videos
+for RStudio and a basic video that shows you how to run code and how to
+install packages will suffice.
+
+The code in this book uses `tidyverse` to manipulate data and `ggplot2`
+for visualization. A great introduction to these very useful tools can
+be found in the freely available web book [R for Data
+Science](https://r4ds.had.co.nz) by @Wickham2017.
+
+## Tidyverse
+
+```{r}
+utils::
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+base::cut
+```
+
+```{r}
+#| collapsed: true
+#| jupyter: {outputs_hidden: true}
+#| tags: []
+?cut
+```
+
+```{r}
+filter
+```
+
+```{r}
+dplyr::filter
+```
+
+```{r}
+#| collapsed: true
+#| jupyter: {outputs_hidden: true}
+#| tags: []
+stats::filter
+```
+
+```{r}
+y1 = True
+y2 = False
+
+print(y1 and y2)       # logical AND
+print(y1 or y2)        # logical OR
+print(y1 and not y2)   # logical NOT
+```
+
+`tidyverse` [@R-tidyverse] is a collection of many very useful packages
+that work well together by sharing design principles and data
+structures. `tidyverse` also includes `ggplot2` [@R-ggplot2] for
+visualization.
+
+In this book, we will use
+
+-   tidyverse tibbles to replace R's built-in data.frames,
+-   the pipe operator `%>%` to chain functions together, and
+-   data transformation functions like `filter()`, `arrange()`,
+    `select()`, `group_by()`, and `mutate()` provided by the tidyverse
+    package `dplyr`.
+
+A good introduction can be found in the [Section on Data
+Wrangling](https://r4ds.had.co.nz/wrangle-intro.html) [@Wickham2017],
+and a very useful reference resource is the [RStudio Data Transformation
+Cheat
+Sheet](https://github.com/rstudio/cheatsheets/raw/master/data-transformation.pdf).
+
+Here is a short example. We create a tibble with the price in dollars
+per pound and the vitamin C content in milligrams (mg) per pound for
+three fruit.
+
+```{r}
+y1 = TRUE
+y2 = FALSE
+
+print(y1 & y2) 
+```
+
+```{r}
+      # logical AND
+print(y1 | y2)        # logical OR
+print(y1 & ! y2)   # logical NOT
+```
+
+```{r}
+tibble(
+  name = c("apple", "banana", "orange"), 
+  price = c(2.5, 2.0, 3.5), 
+  vitamin_c = c(20, 45, 250)
+) -> fruit
+fruit
+```
+
+Now we add a column with the vitamin C (in mg) that a dollar buys you,
+filter only fruit that provides more than 20 mg and then order (arrange)
+the data by the vitamin C per dollar from largest to smallest.
+
+```{r}
+vitamin_c
+```
+
+```{r}
+library(dbplyr)
+```
+
+
+```{r}
+affordable_vitamin_c_sources <- fruit %>% 
+  mutate(vitamin_c_per_dollar = vitamin_c / price) %>% 
+  filter(vitamin_c_per_dollar > 20) %>% 
+  arrange(desc(vitamin_c_per_dollar))
+affordable_vitamin_c_sources 
+```
+
+The pipes operator `%>%` lets you compose a sequence of function calls
+in a more readable way by passing the value to the left on as the first
+argument to the function to the right.
+
+## ggplot2
+
+For visualization, we will use mainly `ggplot2`. The *gg* in `ggplot2`
+stands for **The Grammar of Graphics** introduced in @Wilkinson2005. The
+main idea is that every graph is built from the same basic components:
+
+-   the data,
+-   a coordinate system, and
+-   visual marks representing the data (geoms).
+
+In `ggplot2`, the components are combined using the `+` operator.
+
+> `ggplot(data, mapping = aes(x = ..., y = ..., color = ...)) +`
+> `geom_point()`
+
+Since we typically use a Cartesian coordinate system, `ggplot` uses that
+by default. Each `geom_` function uses a `stat_` function to calculate
+what is visualizes. For example, `geom_bar` uses `stat_count` to create
+a bar chart by counting how often each value appears in the data (see
+`? geom_bar`). `geom_point` just uses the stat `"identity"` to display
+the points using the coordinates as they are. A great introduction can
+be found in the [Chapter on Data
+Visualization](https://r4ds.had.co.nz/data-visualisation.html)
+[@Wickham2017], and very useful is [RStudio's Data Visualization Cheat
+Sheet](https://github.com/rstudio/cheatsheets/raw/master/data-visualization-2.1.pdf).
+
+We can visualize our fruit data as a scatter plot.
+
+```{r}
+ggplot(fruit, aes(x = price, y = vitamin_c)) + 
+  geom_point() + theme_bw()
+```
+
+Alternatively, we can visualize the vitamin C content of each fruit
+using bars.
+
+```{r}
+ggplot(fruit, aes(x = name, y = vitamin_c)) + 
+  geom_col() + theme_bw()
+```
+
+Note that `geom_bar` by default tries to aggregate data by counting, but
+we just want to visualize the value already available in the tibble, so
+we specify the identity statistic.
+

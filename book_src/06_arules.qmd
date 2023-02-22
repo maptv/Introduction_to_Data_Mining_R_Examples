@@ -1,0 +1,16 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_filter: '-all'
+    main_language: python
+    notebook_metadata_filter: '-all'
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+# Association Analysis: Advanced Concepts
+
+No code is available for this Chapter. Some topics were already covered in the code for the previous chapter.
+
